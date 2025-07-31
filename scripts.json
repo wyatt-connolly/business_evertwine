@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "firebase:setup": "echo 'Please follow FIREBASE_SETUP.md for complete setup instructions'",
+    "firebase:deploy": "npm run build && firebase deploy",
+    "test:auth": "echo 'Testing authentication... Create account with test@example.com / password123 first'",
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  }
+}
