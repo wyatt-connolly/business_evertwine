@@ -106,6 +106,7 @@ export default function LoginForm({ onToggleMode, isLogin }: LoginFormProps) {
       setLoading(true);
       await signIn('test@example.com', 'password123');
     } catch (error: unknown) {
+      console.error('Test login error:', error);
       setError('Test login failed. You may need to create the test account first.');
     }
     setLoading(false);
