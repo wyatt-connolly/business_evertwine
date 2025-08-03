@@ -1,0 +1,67 @@
+// Firestore Security Rules for Business Website & App Data Separation
+// This goes in your firestore.rules file
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Business Users Collection - Only for business website
+    match /business_users/{businessUserId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid != null
+        && resource.data.user_id == request.auth.uid
+        && resource.data.user_type == "business_website";
+      
+      allow create: if request.auth != null
+        && request.auth.uid != null
+        && request.resource.data.user_id == request.auth.uid
+        && request.resource.data.user_type == "business_website";
+    }
+    
+    // Business Meetups/Events Collection
+    match /meetups/{meetupId} {
+      // Public read access for event discovery
+      allow read: if true;
+      
+      // Only authenticated business website users can create/edit
+      allow create: if request.auth != null
+        && request.auth.uid != null
+        && request.resource.data.creator_id == request.auth.uid
+        && request.resource.data.creator_type == "business"
+        && exists(/databases/$(database)/documents/business_users/$(request.auth.uid));
+      
+      allow update, delete: if request.auth != null
+        && request.auth.uid != null
+        && resource.data.creator_id == request.auth.uid
+        && resource.data.creator_type == "business";
+    }
+    
+    // Regular App Users Collection (for your main app)
+    // This would be separate and not accessible from business website
+    match /users/{userId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId
+        && resource.data.user_type != "business_website"; // Ensure separation
+    }
+    
+    // Regular App Events Collection (for your main app)
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == resource.data.creator_id
+        && resource.data.creator_type != "business"; // Ensure separation
+    }
+    
+    // Helper function to check if user is business website user
+    function isBusinessWebsiteUser(userId) {
+      return exists(/databases/$(database)/documents/business_users/$(userId)) &&
+             get(/databases/$(database)/documents/business_users/$(userId)).data.user_type == "business_website";
+    }
+    
+    // Helper function to check if user is regular app user
+    function isRegularAppUser(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+             get(/databases/$(database)/documents/users/$(userId)).data.user_type != "business_website";
+    }
+  }
+}
