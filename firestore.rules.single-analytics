@@ -1,0 +1,38 @@
+// Simple Analytics Collection Firestore Rules
+// This goes in your firestore.rules file
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Business Users Collection
+    match /business_users/{businessUserId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == businessUserId;
+    }
+    
+    // Business Meetups Collection
+    match /meetups/{meetupId} {
+      // Public read access for event discovery
+      allow read: if true;
+      
+      // Only authenticated business users can create/edit/delete
+      allow write: if request.auth != null
+        && request.auth.uid == resource.data.business_id;
+    }
+    
+    // Single Analytics Collection - Much Simpler!
+    match /analytics/{analyticsId} {
+      // Allow read for business owners
+      allow read: if request.auth != null 
+        && resource.data.businessId == request.auth.uid;
+      
+      // Allow write for anyone (anonymous tracking allowed)
+      allow create: if request.resource.data.keys().hasAll(['type', 'meetupId', 'businessId', 'timestamp']);
+      
+      // Business owners can update/delete their analytics
+      allow update, delete: if request.auth != null 
+        && resource.data.businessId == request.auth.uid;
+    }
+  }
+}
