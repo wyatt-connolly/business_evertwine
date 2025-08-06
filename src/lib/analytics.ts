@@ -6,12 +6,10 @@ import {
   where,
   getDocs,
   updateDoc,
-  doc,
   increment,
   serverTimestamp,
   orderBy,
   Timestamp,
-  FieldValue,
 } from "firebase/firestore";
 
 // Single analytics document interface with type field
@@ -268,10 +266,11 @@ class AnalyticsService {
         const analyticsDoc = analyticsSnapshot.docs[0];
         const currentData = analyticsDoc.data() as AnalyticsDocument;
 
-        const updateData = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateData: Record<string, any> = {
           updatedAt: serverTimestamp(),
           lastViewed: serverTimestamp(),
-        } as Record<string, unknown>;
+        };
 
         if (updates.impressions) {
           updateData.totalImpressions = increment(updates.impressions);
@@ -331,10 +330,7 @@ class AnalyticsService {
         if (updates.registrations)
           updateData.registrations = increment(updates.registrations);
 
-        await updateDoc(
-          doc(db, "analytics_summary", analyticsDoc.id),
-          updateData
-        );
+        await updateDoc(analyticsDoc.ref, updateData);
       }
     } catch (error) {
       console.error("Error updating analytics summary:", error);
